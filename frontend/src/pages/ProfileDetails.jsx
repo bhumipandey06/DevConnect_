@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import axios from "axios";
 import ProfileCard from "../components/components1/ProfileCard";
 
 const ProfileDetails = () => {
@@ -11,15 +12,11 @@ const ProfileDetails = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`https://devconnect-backend-xvdx.onrender.com/api/form/${id}`);
-        if (!res.ok) {
-          const { message } = await res.json();
-          throw new Error(message || "Failed to fetch");
-        }
-        const data = await res.json();
+        const { data } = await axios.get(`https://devconnect-backend-xvdx.onrender.com/api/form/${id}`);
         setProfile(data);
       } catch (err) {
-        setError(err.message);
+        const message = err.response?.data?.message || "Failed to fetch profile";
+        setError(message);
       }
     };
 
@@ -38,11 +35,12 @@ const ProfileDetails = () => {
     return (
       <div className="text-center mt-10">
         <p className="text-red-500 text-lg font-medium">❌ {error}</p>
-        <p className="text-gray-500 mt-2">The profile you're looking for may have been deleted or doesn't exist.</p>
+        <p className="text-gray-500 mt-2">
+          The profile you're looking for may have been deleted or doesn't exist.
+        </p>
       </div>
     );
   }
-  
 
   if (!profile) {
     return <p className="text-gray-500 text-center mt-10">Loading profile...</p>;

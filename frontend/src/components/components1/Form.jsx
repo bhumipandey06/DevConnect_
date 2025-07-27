@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // Tech stack options
 const techOptions = {
@@ -61,7 +62,6 @@ const Form = ({
   const navigate = useNavigate();
   const [error, setError] = useState("");
 
-  // ✅ Handle checkbox selection
   const handleCheckboxChange = (tech) => {
     if (techStack.includes(tech)) {
       setTechStack(techStack.filter((t) => t !== tech));
@@ -70,7 +70,7 @@ const Form = ({
     }
   };
 
-  // ✅ Save new profile
+  // ✅ Save existing profile
   const handleSaveProfile = async () => {
     if (!name.trim()) {
       setError("Name is required.");
@@ -89,7 +89,7 @@ const Form = ({
       return;
     }
 
-    setError(""); // Clear errors
+    setError("");
 
     const profileData = {
       name,
@@ -103,34 +103,25 @@ const Form = ({
 
     try {
       if (selectedProfileId) {
-        // 🔄 Update existing profile (NO PROMPT)
-        const response = await fetch(
+        const { data: result } = await axios.put(
           `https://devconnect-backend-xvdx.onrender.com/api/form/${selectedProfileId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(profileData),
-          }
+          profileData
         );
-        const result = await response.json();
+
         if (result.success) {
           alert("✅ Profile updated successfully!");
         } else {
           alert("⚠️ Failed to update profile.");
         }
       } else {
-        // ➕ Create new profile — this should not be reached if you're always selecting
         alert("❌ Please use 'Save New Profile' to create a new profile.");
         return;
       }
 
-      // 🔄 Refresh saved profiles
-      const updatedProfilesResponse = await fetch(
+      const { data: updated } = await axios.get(
         "https://devconnect-backend-xvdx.onrender.com/api/form/profiles"
       );
-      const updated = await updatedProfilesResponse.json();
+
       if (updated.success) {
         setSavedProfiles(updated.data);
       }
@@ -140,7 +131,7 @@ const Form = ({
     }
   };
 
-  // create new profile
+  // ✅ Save as new profile
   const handleSaveAsNew = async () => {
     const profileLabel = prompt("Enter a name for this saved profile:");
     if (!profileLabel) return;
@@ -163,34 +154,29 @@ const Form = ({
     }
 
     const profileData = {
-      name, // ✅ full name of user
+      name,
       bio,
       github,
       linkedin,
       portfolio,
       techStack,
       profileImage,
-      label: profileLabel, // ✅ label shown in dropdown
+      label: profileLabel,
     };
 
     try {
-      const response = await fetch("https://devconnect-backend-xvdx.onrender.com/api/form/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(profileData),
-      });
+      const { data: result } = await axios.post(
+        "https://devconnect-backend-xvdx.onrender.com/api/form/submit",
+        profileData
+      );
 
-      const result = await response.json();
       if (result.success) {
         alert("✅ Profile saved as new successfully!");
 
-        // Refresh saved profiles
-        const updatedProfiles = await fetch(
+        const { data } = await axios.get(
           "https://devconnect-backend-xvdx.onrender.com/api/form/profiles"
         );
-        const data = await updatedProfiles.json();
+
         if (data.success) {
           setSavedProfiles(data.data);
         }
@@ -203,10 +189,9 @@ const Form = ({
     }
   };
 
-  // ✅ Unified load + select logic
   const handleSelectProfile = (e) => {
     const selectedId = e.target.value;
-    setSelectedProfileId(selectedId); // set this for deletion too
+    setSelectedProfileId(selectedId);
     if (!selectedId) return;
 
     const selectedProfile = savedProfiles.find((p) => p._id === selectedId);
@@ -231,7 +216,7 @@ const Form = ({
     setProfileImage(savedProfileImage || "");
   };
 
-  // ✅ Delete selected profile
+  // ✅ Delete profile
   const handleDeleteProfile = async () => {
     if (!selectedProfileId) return;
 
@@ -241,29 +226,21 @@ const Form = ({
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(
-        `https://devconnect-backend-xvdx.onrender.com/api/form/${selectedProfileId}`,
-        {
-          method: "DELETE",
-        }
+      const { data: result } = await axios.delete(
+        `https://devconnect-backend-xvdx.onrender.com/api/form/${selectedProfileId}`
       );
 
-      const result = await res.json(); // ✅ Safe now
-
-      if (!res.ok) {
+      if (!result.success) {
         throw new Error(result.message || "Failed to delete");
       }
 
       alert("🗑️ Profile deleted successfully!");
 
-      // Refresh list
-      const updatedProfilesRes = await fetch(
+      const { data: updatedData } = await axios.get(
         "https://devconnect-backend-xvdx.onrender.com/api/form/profiles"
       );
-      const updatedData = await updatedProfilesRes.json();
       setSavedProfiles(updatedData.data);
 
-      // Reset form
       setSelectedProfileId("");
       setName("");
       setBio("");
@@ -281,9 +258,7 @@ const Form = ({
   return (
     <form
       className="space-y-6 p-6 bg-white dark:bg-zinc-900 rounded-lg shadow"
-      onSubmit={(e) => {
-        e.preventDefault();
-      }}
+      onSubmit={(e) => e.preventDefault()}
     >
       {/* 🔹 Profile Selector + Delete */}
       <div className="mb-4">
@@ -315,7 +290,7 @@ const Form = ({
         </div>
       </div>
 
-      {/* 🔹 Name Input */}
+      {/* Name */}
       <div>
         <label className="block mb-1 font-medium">Full Name</label>
         <input
@@ -327,7 +302,7 @@ const Form = ({
         {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
       </div>
 
-      {/* 🔹 Bio Input */}
+      {/* Bio */}
       <div>
         <label className="block mb-1 font-medium">Bio</label>
         <textarea
@@ -338,10 +313,9 @@ const Form = ({
         />
       </div>
 
-      {/* Tech Stack Section */}
+      {/* Tech Stack */}
       <div>
         <label className="block mb-1 font-medium">Tech Stack</label>
-
         {Object.entries(techOptions).map(([category, techList]) => (
           <div key={category} className="mb-4">
             <h4 className="font-semibold text-sm text-zinc-700 dark:text-zinc-300 mb-2">
@@ -363,7 +337,7 @@ const Form = ({
         ))}
       </div>
 
-      {/* 🔹 Links */}
+      {/* Links */}
       <div>
         <label className="block mb-1 font-medium">GitHub Link</label>
         <input
@@ -397,7 +371,7 @@ const Form = ({
         />
       </div>
 
-      {/* 🔹 Upload Profile Picture */}
+      {/* Upload Image */}
       <div>
         <label className="block mb-1 font-medium">Upload Profile Picture</label>
         <input
@@ -417,7 +391,7 @@ const Form = ({
         />
       </div>
 
-      {/* 🔹 Actions */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 mt-4">
         {selectedProfileId && (
           <button

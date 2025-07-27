@@ -1,6 +1,7 @@
 // src/pages/AllProfiles.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const AllProfiles = () => {
   const [profiles, setProfiles] = useState([]);
@@ -8,8 +9,9 @@ const AllProfiles = () => {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const res = await fetch("https://devconnect-backend-xvdx.onrender.com/api/form/profiles");
-        const data = await res.json();
+        const { data } = await axios.get(
+          "https://devconnect-backend-xvdx.onrender.com/api/form/profiles"
+        );
         if (data.success) {
           setProfiles(data.data);
         }
