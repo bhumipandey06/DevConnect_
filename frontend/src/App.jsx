@@ -5,6 +5,9 @@ import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import ProfileDetails from "./pages/ProfileDetails";
 import AllProfiles from "./pages/AllProfiles";
+import Signup from "./pages/Signup";
+import Signin from "./pages/Signin";
+
 
 function App() {
   return (
@@ -17,6 +20,8 @@ function App() {
           {/* <Route path="/profile" element={<Profile />} /> */}
           <Route path="/profile/:id" element={<ProfileDetails />} />
           <Route path="/profiles" element={<AllProfiles />} />
+          <Route path="/signup" element={<Signup />} />
+        <Route path="/signin" element={<Signin />} />
         </Routes>
       </main>
 
